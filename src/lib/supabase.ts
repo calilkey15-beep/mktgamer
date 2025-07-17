@@ -1,13 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Supabase URL e Anon Key são obrigatórios');
+  console.warn('Supabase URL e Anon Key não configurados. Usando cliente mock.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = supabaseUrl && supabaseAnonKey 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
 
 // Types
 export interface User {
@@ -102,6 +104,8 @@ export const PLAN_LIMITS = {
 
 // Auth functions
 export const signUp = async (email: string, password: string, name: string) => {
+  if (!supabase) throw new Error('Supabase não configurado');
+  
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -115,6 +119,8 @@ export const signUp = async (email: string, password: string, name: string) => {
 };
 
 export const signIn = async (email: string, password: string) => {
+  if (!supabase) throw new Error('Supabase não configurado');
+  
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password
@@ -125,11 +131,15 @@ export const signIn = async (email: string, password: string) => {
 };
 
 export const signOut = async () => {
+  if (!supabase) throw new Error('Supabase não configurado');
+  
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 };
 
 export const getCurrentUser = async (): Promise<User | null> => {
+  if (!supabase) return null;
+  
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
   
@@ -145,6 +155,8 @@ export const getCurrentUser = async (): Promise<User | null> => {
 
 // Client functions
 export const getClients = async (): Promise<Client[]> => {
+  if (!supabase) return [];
+  
   const { data, error } = await supabase
     .from('clients')
     .select('*')
@@ -155,6 +167,8 @@ export const getClients = async (): Promise<Client[]> => {
 };
 
 export const createClient = async (clientData: Omit<Client, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Promise<Client> => {
+  if (!supabase) throw new Error('Supabase não configurado');
+  
   const user = await getCurrentUser();
   if (!user) throw new Error('Usuário não autenticado');
   
@@ -180,6 +194,8 @@ export const createClient = async (clientData: Omit<Client, 'id' | 'user_id' | '
 };
 
 export const updateClient = async (id: string, updates: Partial<Client>): Promise<Client> => {
+  if (!supabase) throw new Error('Supabase não configurado');
+  
   const { data, error } = await supabase
     .from('clients')
     .update(updates)
@@ -192,6 +208,8 @@ export const updateClient = async (id: string, updates: Partial<Client>): Promis
 };
 
 export const deleteClient = async (id: string): Promise<void> => {
+  if (!supabase) throw new Error('Supabase não configurado');
+  
   const { error } = await supabase
     .from('clients')
     .delete()
@@ -202,6 +220,8 @@ export const deleteClient = async (id: string): Promise<void> => {
 
 // Loan functions
 export const getLoans = async (): Promise<Loan[]> => {
+  if (!supabase) return [];
+  
   const { data, error } = await supabase
     .from('loans')
     .select(`
@@ -246,6 +266,8 @@ export const createLoan = async (loanData: {
   due_date: string;
   notes?: string;
 }): Promise<Loan> => {
+  if (!supabase) throw new Error('Supabase não configurado');
+  
   const user = await getCurrentUser();
   if (!user) throw new Error('Usuário não autenticado');
   
@@ -275,6 +297,8 @@ export const createLoan = async (loanData: {
 };
 
 export const updateLoanStatus = async (id: string, status: 'active' | 'paid' | 'overdue'): Promise<void> => {
+  if (!supabase) throw new Error('Supabase não configurado');
+  
   const { error } = await supabase
     .from('loans')
     .update({ status })
@@ -284,6 +308,8 @@ export const updateLoanStatus = async (id: string, status: 'active' | 'paid' | '
 };
 
 export const addLoanPayment = async (loanId: string, amount: number, notes?: string): Promise<void> => {
+  if (!supabase) throw new Error('Supabase não configurado');
+  
   const user = await getCurrentUser();
   if (!user) throw new Error('Usuário não autenticado');
   
@@ -321,6 +347,8 @@ export const addLoanPayment = async (loanId: string, amount: number, notes?: str
 
 // Payment functions
 export const createSubscriptionPayment = async (plan: 'pro' | 'premium', paymentMethod: string): Promise<Payment> => {
+  if (!supabase) throw new Error('Supabase não configurado');
+  
   const user = await getCurrentUser();
   if (!user) throw new Error('Usuário não autenticado');
   
@@ -343,6 +371,8 @@ export const createSubscriptionPayment = async (plan: 'pro' | 'premium', payment
 };
 
 export const updateUserPlan = async (plan: 'free' | 'pro' | 'premium'): Promise<void> => {
+  if (!supabase) throw new Error('Supabase não configurado');
+  
   const user = await getCurrentUser();
   if (!user) throw new Error('Usuário não autenticado');
   
@@ -362,6 +392,8 @@ export const updateUserPlan = async (plan: 'free' | 'pro' | 'premium'): Promise<
 
 // File upload functions
 export const uploadFile = async (file: File, bucket: string, path: string): Promise<string> => {
+  if (!supabase) throw new Error('Supabase não configurado');
+  
   const { data, error } = await supabase.storage
     .from(bucket)
     .upload(path, file);
@@ -377,6 +409,20 @@ export const uploadFile = async (file: File, bucket: string, path: string): Prom
 
 // Dashboard stats
 export const getDashboardStats = async () => {
+  if (!supabase) {
+    return {
+      totalClients: 0,
+      totalLoans: 0,
+      activeLoans: 0,
+      paidLoans: 0,
+      overdueLoans: 0,
+      totalLoaned: 0,
+      totalReceived: 0,
+      totalPending: 0,
+      netProfit: 0
+    };
+  }
+  
   const user = await getCurrentUser();
   if (!user) throw new Error('Usuário não autenticado');
   
