@@ -1,27 +1,7 @@
 import { useState, useEffect } from 'react';
-import { getNotifications, createNotification } from '../lib/supabase';
 import { differenceInDays } from 'date-fns';
 
 export const useNotifications = () => {
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const loadNotifications = async () => {
-    try {
-      setLoading(true);
-      const data = await getNotifications();
-      setNotifications(data || []);
-    } catch (error) {
-      console.error('Error loading notifications:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadNotifications();
-  }, []);
-
   const generateLoanNotifications = (loans: any[]) => {
     const today = new Date();
     const generatedNotifications: any[] = [];
@@ -67,22 +47,7 @@ export const useNotifications = () => {
     });
   };
 
-  const addNotification = async (notificationData: any) => {
-    try {
-      const notification = await createNotification(notificationData);
-      setNotifications(prev => [notification, ...prev]);
-      return notification;
-    } catch (error) {
-      console.error('Error creating notification:', error);
-      throw error;
-    }
-  };
-
   return {
-    notifications,
-    loading,
     generateLoanNotifications,
-    addNotification,
-    refreshNotifications: loadNotifications,
   };
 };
