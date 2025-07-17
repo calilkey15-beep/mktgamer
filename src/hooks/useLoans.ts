@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getLoans, createLoan, createPayment } from '../lib/supabase';
+import { getLoans, createLoan, addLoanPayment } from '../lib/supabase';
 import { toast } from 'react-toastify';
 
 export const useLoans = () => {
@@ -43,10 +43,7 @@ export const useLoans = () => {
 
   const addLoanPayment = async (loanId: string, paymentData: any) => {
     try {
-      const payment = await createPayment({
-        ...paymentData,
-        loan_id: loanId,
-      });
+      const payment = await addLoanPayment(loanId, paymentData.amount);
       
       // Reload loans to get updated data
       await loadLoans();
